@@ -1,6 +1,9 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ExchangeService } from '../services/exchange.service';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { Public } from 'src/modules/auth/decorators/public.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('api/reto/currencyExchange')
 export class ExchangeController {
   constructor(protected exchangeService: ExchangeService) {}
@@ -28,6 +31,7 @@ export class ExchangeController {
     }
   }
 
+  @Public()
   @Get('exchangeRates/:originCurrency')
   async getAllChangeByCurrency(
     @Param('originCurrency') originCurrency: string,
