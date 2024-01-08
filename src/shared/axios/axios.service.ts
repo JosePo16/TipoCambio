@@ -1,26 +1,25 @@
 import { HttpService } from '@nestjs/axios';
+import axios, { AxiosResponse } from 'axios';
 import { Injectable } from '@nestjs/common';
-import { Observable, map } from 'rxjs';
-import { ExchangeRateInterface } from './interfaces/exchangeRate.Interface';
-import { AxiosResponse } from 'axios';
+import { map } from 'rxjs';
+import { ExchangeRateResponse } from './interfaces/exchangeRate.Interface';
 
 @Injectable()
 export class AxiosService {
   constructor(private readonly httpService: HttpService) {}
 
-  getExchangeRate(
+  async getExchangeRate(
     source: string,
     target: string,
-    amount: string,
-  ): Observable<ExchangeRateInterface> {
+    amount: number,
+  ): Promise<ExchangeRateResponse> {
     try {
-      return this.httpService
-        .get(
-          `https://api.cambio.today/v1/quotes/${source}/${target}/json?quantity=${amount}&key=45934|ZbSD26bkCVBufbj21Gx5`,
-        )
-        .pipe(map((response: AxiosResponse) => response.data));
+      const response = await axios.get(
+        `https://api.cambio.today/v1/quotes/${source}/${target}/json?quantity=${amount}&key=45934|ZbSD26bkCVBufbj21Gx5`,
+      );
+      return response.data as ExchangeRateResponse;
     } catch (error) {
-      throw console.log('Error al obtener el tipo de cambio');
+      console.log(error);
     }
   }
 
