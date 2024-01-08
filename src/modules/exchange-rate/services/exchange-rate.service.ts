@@ -1,13 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AxiosService } from 'src/shared/axios/axios.service';
 import {
   ResponseData,
   ResponseExchangeRateInterface,
 } from '../interfaces/responseExchangeRate.interface';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class ExchangeRateService {
-  constructor(protected axiosService: AxiosService) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private axiosService: AxiosService,
+  ) {}
 
   getExchangeRateByAmount = async (
     source: string,
@@ -37,7 +42,12 @@ export class ExchangeRateService {
   };
 
   getAllExchangeRate = async (source: string) => {
-    const response = await this.axiosService.getAllChangesByCurrency(source);
-    return response;
+    const cacheItem = await this.cacheManager.get(source);
+    if (!cacheItem) {
+      const response = await this.axiosService.getAllChangesByCurrency(source);
+      await this.cacheManager.set(source, response);
+      return response;
+    }
+    return cacheItem;
   };
 }

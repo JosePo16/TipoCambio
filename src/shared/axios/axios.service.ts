@@ -23,7 +23,7 @@ export class AxiosService {
     }
   }
 
-  getAllChangesByCurrency(source: string) {
+  async getAllChangesByCurrency(source: string) {
     try {
       return this.httpService
         .get(

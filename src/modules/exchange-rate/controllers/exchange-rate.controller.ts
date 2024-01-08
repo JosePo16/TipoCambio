@@ -1,9 +1,7 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Controller, Get, Inject, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { Public } from 'src/modules/auth/decorators/public.decorator';
-import { Cache } from 'cache-manager';
 import { ExchangeRateService } from '../services/exchange-rate.service';
 import { ExchangeRateinterface } from '../interfaces/exchangeRate.interface';
 import { PinoLogger } from 'nestjs-pino';
@@ -12,7 +10,6 @@ import { PinoLogger } from 'nestjs-pino';
 @Controller('api/exchange')
 export class ExchangeRateController {
   constructor(
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private exchangeRateService: ExchangeRateService,
     private readonly logger: PinoLogger,
   ) {}
@@ -24,13 +21,26 @@ export class ExchangeRateController {
       this.logger.info(
         `PROCESSING REQUEST - petition for: ${JSON.stringify(value)}`,
       );
+      if (value.source === value.target) {
+        this.logger.error(
+          `PROCESSING ERROR - Moneda de origen igual a moneda destino ${JSON.stringify(
+            value,
+          )}`,
+        );
+
+        return {
+          data: null,
+          status: 'Warning',
+          message: 'Moneda de origen igual a moneda destino',
+        };
+      }
       return await this.exchangeRateService.getExchangeRateByAmount(
         value.source,
         value.target,
         value.amount,
       );
     } catch (error) {
-      //   this.logger.error(error);
+      this.logger.error(`PROCESSING ERROR - error: ${error}`);
     }
   }
 
@@ -40,11 +50,9 @@ export class ExchangeRateController {
     @Param('originCurrency') originCurrency: string,
   ) {
     try {
-      const resp =
-        await this.exchangeRateService.getAllExchangeRate(originCurrency);
-      await this.cacheManager.set('cached_item', resp);
+      return await this.exchangeRateService.getAllExchangeRate(originCurrency);
     } catch (error) {
-      //   this.logger.error(error);
+      this.logger.error(`PROCESSING ERROR - error: ${error}`);
     }
   }
 }
